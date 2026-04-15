@@ -26,4 +26,6 @@ def print_dataset_info(file_path: str):
     print(f"Number of non-privileged emails: {num_non_privileged}")
     print(f"Percentage of privileged emails: {num_privileged / num_emails * 100:.2f}%")
 
+    print("Columns : ", df.columns.tolist())
+
 print_dataset_info("enron_emails_labeled.csv")
