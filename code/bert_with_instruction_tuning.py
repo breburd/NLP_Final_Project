@@ -1,12 +1,18 @@
 # Import libraries
 import argparse
 import random
+import subprocess
+from tqdm import tqdm
+import json
+import evaluate as evaluate
+from transformers import get_scheduler
 import pandas as pd
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import numpy as np
 from sklearn.model_selection import GroupShuffleSplit
+import matplotlib.pyplot as plt
 
 
 def seed_everything(seed=42):
@@ -16,6 +22,23 @@ def seed_everything(seed=42):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+
+
+def print_gpu_memory():
+    """
+    Print the amount of GPU memory used by the current process
+    This is useful for debugging memory issues on the GPU
+
+    Source: base_classification.py from Assignment 6
+    """
+    # check if gpu is available
+    if torch.cuda.is_available():
+        print("torch.cuda.memory_allocated: %fGB" % (torch.cuda.memory_allocated(0) / 1024 / 1024 / 1024))
+        print("torch.cuda.memory_reserved: %fGB" % (torch.cuda.memory_reserved(0) / 1024 / 1024 / 1024))
+        print("torch.cuda.max_memory_reserved: %fGB" % (torch.cuda.max_memory_reserved(0) / 1024 / 1024 / 1024))
+
+        p = subprocess.check_output('nvidia-smi')
+        print(p.decode("utf-8"))
 
 
 class EnronDataset(torch.utils.data.Dataset):
@@ -154,6 +177,143 @@ def pre_process(model_name, batch_size, device):
     pretrained_model.to(device)
     return pretrained_model, train_dataloader, validation_dataloader, test_dataloader
 
+
+def evaluate_model(model, dataloader, device):
+    """ Evaluate a PyTorch Model
+    :param torch.nn.Module model: the model to be evaluated
+    :param torch.utils.data.DataLoader test_dataloader: DataLoader containing testing examples
+    :param torch.device device: the device that we'll be training on
+    :return accuracy
+
+    Source: base_classification.py from Assignment 6, but TODO will need to modify it to work 
+    with the new dataset and model architecture.
+    """
+
+    # load metrics
+    dev_accuracy = evaluate.load('accuracy')
+
+    # turn model into evaluation mode
+    model.eval()
+
+    # iterate over the dataloader
+    for batch in dataloader:
+        input_ids = batch['input_ids'].to(device)
+        attention_mask = batch['attention_mask'].to(device)
+
+        # forward pass
+        output = model(input_ids, attention_mask)
+
+        predictions = output.logits
+        predictions = torch.argmax(predictions, dim=1)
+        dev_accuracy.add_batch(predictions=predictions, references=batch['labels'])
+
+    # compute and return metrics
+    return dev_accuracy.compute()
+
+
+def train(mymodel, num_epochs, train_dataloader, validation_dataloader, test_dataloder, device, lr):
+    """ Train a PyTorch Module
+
+    :param torch.nn.Module mymodel: the model to be trained
+    :param int num_epochs: number of epochs to train for
+    :param torch.utils.data.DataLoader train_dataloader: DataLoader containing training examples
+    :param torch.utils.data.DataLoader validation_dataloader: DataLoader containing validation examples
+    :param torch.device device: the device that we'll be training on
+    :param float lr: learning rate
+    :return None
+
+    Source: base_classification.py from Assignment 6, but TODO will need to modify it to work 
+    with the new dataset and model architecture.
+    """
+
+    # TODO test with multiple learning rates and optimizers -> possibly add command line arguments for
+    # the optimizer
+    print(" >>>>>>>>  Initializing optimizer")
+    optimizer = torch.optim.AdamW(mymodel.parameters(), lr=lr)
+
+    # now, we set up the learning rate scheduler
+    lr_scheduler = get_scheduler(
+        "linear",
+        optimizer=optimizer,
+        num_warmup_steps=50,
+        num_training_steps=len(train_dataloader) * num_epochs
+    )
+
+    loss = torch.nn.CrossEntropyLoss()
+    
+    epoch_list = []
+    train_acc_list = []
+    dev_acc_list = []
+
+    for epoch in range(num_epochs):
+
+        # put the model in training mode (important that this is done each epoch,
+        # since we put the model into eval mode during validation)
+        mymodel.train()
+
+        # load metrics
+        train_accuracy = evaluate.load('accuracy')
+
+        print(f"Epoch {epoch + 1} training:")
+
+        for i, batch in tqdm(enumerate(train_dataloader)):
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            labels = batch['labels'].to(device)
+
+            # forward pass
+            output = mymodel.forward(input_ids, attention_mask)
+            predictions = output['logits']
+
+            # compute the loss using the loss function
+            loss_value = loss(predictions, labels)
+
+            # loss backward
+            loss_value.backward()
+
+            # update the model parameters with optimizer and lr_scheduler step
+            optimizer.step()
+            lr_scheduler.step()
+
+            # zero the gradients
+            optimizer.zero_grad()
+
+            predictions = torch.argmax(predictions, dim=1)
+
+            # update metrics
+            train_accuracy.add_batch(predictions=predictions, references=batch['labels'])
+            
+        # print evaluation metrics
+        print(f" ===> Epoch {epoch + 1}")
+        train_acc = train_accuracy.compute()
+        print(f" - Average training metrics: accuracy={train_acc}")
+        train_acc_list.append(train_acc['accuracy'])
+
+        # normally, validation would be more useful when training for many epochs
+        val_accuracy = evaluate_model(mymodel, validation_dataloader, device)
+        print(f" - Average validation metrics: accuracy={val_accuracy}")
+        dev_acc_list.append(val_accuracy['accuracy'])
+        
+        epoch_list.append(epoch)
+        
+    # save the training and validation accuracy for each epoch to a json file to build bar plots later
+    with open(f'train_acc_{args.model}_{lr}_{num_epochs}.json', 'w', encoding='utf-8') as f:
+        json.dump(train_acc_list, f)
+    with open(f'dev_acc_{args.model}_{lr}_{num_epochs}.json', 'w', encoding='utf-8') as f:
+        json.dump(dev_acc_list, f)
+
+    # generate plots here
+    plt.clf()
+    plt.plot(epoch_list, train_acc_list, 'b', label='train')
+    plt.plot(epoch_list, dev_acc_list, 'g', label='valid')
+    plt.xlabel('Training Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Training and Validation Accuracy')
+    plt.legend()
+    save_path = f"base_full_{args.model}_{lr}_{num_epochs}.png"
+    plt.savefig(save_path)
+
+
 if __name__ == "__main__":
     seed_everything()  # Set random seed for reproducibility
 
@@ -172,3 +332,14 @@ if __name__ == "__main__":
 
     # TODO train the model, report accuracy, and save the model for inference later.
     # Then we need to build multiple experiments to be run
+    print(" >>>>>>>>  Starting training ... ")
+    train(pretrained_model, args.num_epochs, train_dataloader, validation_dataloader, test_dataloader, args.device, args.lr)
+    
+    # print the GPU memory usage just to make sure things are alright
+    print_gpu_memory()
+
+    val_accuracy = evaluate_model(pretrained_model, validation_dataloader, args.device)
+    print(f" - Average DEV metrics: accuracy={val_accuracy}")
+
+    test_accuracy = evaluate_model(pretrained_model, test_dataloader, args.device)
+    print(f" - Average TEST metrics: accuracy={test_accuracy}")
