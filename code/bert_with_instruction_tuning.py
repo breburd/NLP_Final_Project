@@ -130,7 +130,7 @@ def load_dataset(model_name):
     print("Loading the tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    print("Loding the data into DS...")
+    print("Loading the data into DS...")
     train_dataset = EnronDataset(
         from_user=list(train_df['from']),
         to=list(train_df['to']),

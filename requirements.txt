@@ -8,8 +8,9 @@ snorkel
 
 # Modeling
 torch==2.2.1
-transformers==4.38.1
-accelerate>=0.21.0,<1.0
+transformers==4.41.2
+accelerate==0.28.0
+peft==0.10.0
 
 # Optional API experiments noted in the project README
 openai==1.12.0
