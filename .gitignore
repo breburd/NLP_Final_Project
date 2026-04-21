@@ -1,1 +1,6 @@
 maildir/
+outputs/
+checkpoints/
+*.pt
+*.bin
+*.safetensors

@@ -1,7 +1,18 @@
-TODO: This was just copied from previous assignments and should be updated
-matplotlib==3.8.3
-openai==1.12.0
+# Core scientific stack
+numpy
+pandas
+scikit-learn
+
+# Weak labeling / preprocessing
+snorkel
+
+# Modeling
 torch==2.2.1
 transformers==4.38.1
-scikit-learn
-snorkel
+accelerate>=0.21.0,<1.0
+
+# Optional API experiments noted in the project README
+openai==1.12.0
+
+# Plotting / analysis
+matplotlib==3.8.3
