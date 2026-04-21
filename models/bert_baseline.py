@@ -250,8 +250,20 @@ if __name__ == "__main__":
     valid_pred = np.argmax(valid_output.predictions, axis=-1)
     test_pred = np.argmax(test_output.predictions, axis=-1)
 
-    print(f" - Average DEV metrics: \n{get_scores(valid_df['label'], valid_pred)}")
-    print(f" - Average TEST metrics: \n{get_scores(test_df['label'], test_pred)}")
+    valid_scores = get_scores(valid_df['label'], valid_pred)
+    print(f""" - Average DEV metrics: \n
+          \tAccuracy: {valid_scores['accuracy']:.4f}\n
+          \tPrecision: {valid_scores['precision']:.4f}\n
+          \tRecall: {valid_scores['recall']:.4f}\n
+          \tF1: {valid_scores['f1']:.4f}
+          \tClassification Report: \n{valid_scores['classification_report']}""")
+    test_scores = get_scores(test_df['label'], test_pred)
+    print(f""" - Average TEST metrics: 
+          \tAccuracy: {test_scores['accuracy']:.4f}
+          \tPrecision: {test_scores['precision']:.4f}
+          \tRecall: {test_scores['recall']:.4f}
+          \tF1: {test_scores['f1']:.4f}
+          \tClassification Report: \n{test_scores['classification_report']}""")
 
     results = {
         "baseline": "bert_baseline",
@@ -261,8 +273,8 @@ if __name__ == "__main__":
         "num_train": len(train_df),
         "num_valid": len(valid_df),
         "num_test": len(test_df),
-        "valid": get_scores(valid_df["label"], valid_pred),
-        "test": get_scores(test_df["label"], test_pred),
+        "valid": valid_scores,
+        "test": test_scores,
     }
 
     print("Saving the model and results...")
