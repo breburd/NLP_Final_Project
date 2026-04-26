@@ -4,30 +4,10 @@ import numpy as np
 import torch
 from sklearn.utils.class_weight import compute_class_weight
 from torch.utils.data import Dataset
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments, AutoModelForSeq2SeqLM
 from torch.utils.data import DataLoader
 from common import DEFAULT_DATA_PATH, DEFAULT_OUTPUT_DIR, get_scores, load_data, make_folder, print_gpu_memory, save_json, split_data, seed_everything
 
-
-# class EmailDataset(Dataset):
-#     def __init__(self, texts, labels, tokenizer, max_length):
-#         self.labels = list(labels)
-#         self.encodings = tokenizer(
-#             list(texts),
-#             truncation=True,
-#             padding=True,
-#             max_length=max_length,
-#         )
-
-#     def __len__(self):
-#         return len(self.labels)
-
-#     def __getitem__(self, index):
-#         item = {}
-#         for key in self.encodings:
-#             item[key] = torch.tensor(self.encodings[key][index])
-#         item["labels"] = torch.tensor(int(self.labels[index]), dtype=torch.long)
-#         return item
 
 class EnronDataset(Dataset):
     """
@@ -58,7 +38,8 @@ class EnronDataset(Dataset):
 
         # this is input encoding for your model. Note, question comes first since we are doing question answering
         # and we don't wnt it to be truncated if the email is too long
-        input_encoding = f"{self.question} [SEP] FROM: {self.from_user[index]} TO: {self.to[index]} SUBJECT: {self.subject[index]} EMAIL: {email}"
+        sep_token = self.tokenizer.sep_token if self.tokenizer.sep_token is not None else "[SEP]"
+        input_encoding = f"{self.question} {sep_token} FROM: {self.from_user[index]} TO: {self.to[index]} SUBJECT: {self.subject[index]} EMAIL: {email}"
 
         # encode_plus will encode the input and return a dictionary of tensors
         encoded_review = self.tokenizer.encode_plus(
@@ -76,7 +57,8 @@ class EnronDataset(Dataset):
             'input_ids': encoded_review['input_ids'][0],  # we only have one example in the batch
             'attention_mask': encoded_review['attention_mask'][0],
             # attention mask tells the model where tokens are padding
-            'labels': torch.tensor(answer, dtype=torch.long)  # labels are the answers (yes/no)
+            'labels': torch.tensor(answer, dtype=torch.long),  # labels are the answers (yes/no)
+            'text': input_encoding  # we also return the raw text for later use in explanations
         }
     
 
@@ -85,7 +67,7 @@ class MyTrainer(Trainer):
     Custom Trainer class that allows for class weights to be used in the loss function. This is useful for handling 
     class imbalance in the dataset, where one class may be more prevalent than the other. By providing class weights, 
     we can give more importance to the minority class during training, which can help improve the model's performance on that class.
-    """
+    """    
     def __init__(self, class_weights=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.class_weights = class_weights
@@ -132,6 +114,55 @@ def metric_function(prediction_output):
     return scores
 
 
+def generate_explanation(text, label, exp_model, exp_tokenizer):
+    """
+    Generate an explanation for why a given email was classified as privileged or not privileged. This function takes 
+    the raw text of the email and the classification label, and uses the explanation model and tokenizer to generate a
+    natural language explanation.
+    """
+    label_str = "privileged" if label == 1 else "not privileged"
+
+    prompt = f"""
+    An email was classified as {label_str}.
+
+    Explain why this classification makes sense based on the content.
+
+    Email:
+    {text}
+
+    Explanation:
+    """
+
+    inputs = exp_tokenizer(
+        prompt,
+        return_tensors="pt",
+        truncation=True
+    )
+
+    # Move inputs to same device as model
+    device = exp_model.device
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+
+    outputs = exp_model.generate(
+        **inputs,
+        max_new_tokens=120
+    )
+
+    return exp_tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+
+def create_explanations(texts, labels, exp_model, exp_tokenizer):
+    """
+    Generate explanations for a list of texts and their corresponding labels using the provided explanation model and tokenizer.
+    This function iterates over each text and label, generates an explanation for each pair using the generate_explanation 
+    function, and collects the explanations in a list, which is then returned.
+    """
+    explanations = []
+    for text, label in zip(texts, labels):
+        explanation = generate_explanation(text, label, exp_model, exp_tokenizer)
+        explanations.append(explanation)
+    return explanations
+
 if __name__ == "__main__":
     # Initialize the argument parser and parse the command line arguments for data path, output directory, model name, 
     # max sequence length, number of epochs, sizes of train/validation/test sets, batch size, learning rate, and random seed.
@@ -163,8 +194,12 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=2)
 
+    exp_tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
+    exp_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
+
     print("Moving model to device ..." + str(args.device))
     model.to(args.device)
+    exp_model.to(args.device)
 
     print("Loading the data into PyTorch Datasets...")
     train_dataset = EnronDataset(
@@ -245,7 +280,9 @@ if __name__ == "__main__":
 
     print("Evaluating the model on the validation and test sets...")
     valid_output = trainer.predict(valid_dataset)
+    valid_explanations = create_explanations(valid_dataset.email, valid_dataset.privileged, exp_model, exp_tokenizer)
     test_output = trainer.predict(test_dataset)
+    test_explanations = create_explanations(test_dataset.email, test_dataset.privileged, exp_model, exp_tokenizer)
 
     valid_pred = np.argmax(valid_output.predictions, axis=-1)
     test_pred = np.argmax(test_output.predictions, axis=-1)
@@ -275,6 +312,8 @@ if __name__ == "__main__":
         "num_test": len(test_df),
         "valid": valid_scores,
         "test": test_scores,
+        "valid_explanations": valid_explanations,
+        "test_explanations": test_explanations,
     }
 
     print("Saving the model and results...")
