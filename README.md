@@ -1,5 +1,5 @@
 # CS 601.471/671: Self-supervised Models
-## Final Project: Implementing Intruction-Tuning with Privileged Data
+## Final Project: Implementing Intruction-Tuning to Classify Privileged Data with Explanations
 
 <p align="right">
 Breanna Burd and Albert Rojas De Jesus
