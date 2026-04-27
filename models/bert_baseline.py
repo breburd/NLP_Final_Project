@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from sklearn.utils.class_weight import compute_class_weight
 from torch.utils.data import Dataset
+from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments, AutoModelForSeq2SeqLM
 from torch.utils.data import DataLoader
 from common import DEFAULT_DATA_PATH, DEFAULT_OUTPUT_DIR, get_scores, load_data, make_folder, print_gpu_memory, save_json, split_data, seed_everything
@@ -120,7 +121,7 @@ def generate_explanation(text, label, exp_model, exp_tokenizer):
     the raw text of the email and the classification label, and uses the explanation model and tokenizer to generate a
     natural language explanation.
     """
-    label_str = "privileged" if label == 1 else "not privileged"
+    label_str = "not privileged" if label == 1 else "privileged"
 
     prompt = f"""
     An email was classified as {label_str}.
@@ -158,7 +159,7 @@ def create_explanations(texts, labels, exp_model, exp_tokenizer):
     function, and collects the explanations in a list, which is then returned.
     """
     explanations = []
-    for text, label in zip(texts, labels):
+    for text, label in tqdm(zip(texts, labels), total=len(texts)):
         explanation = generate_explanation(text, label, exp_model, exp_tokenizer)
         explanations.append(explanation)
     return explanations
