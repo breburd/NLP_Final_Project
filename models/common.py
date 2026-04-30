@@ -85,7 +85,7 @@ def load_data(data_path):
     return df
 
 
-def split_data(df, test_size=0.2, valid_size=0.1):
+def split_data(df, test_size=0.2, valid_size=0.1, seed=42):
     """
      Split the dataset into train, validation, and test sets while ensuring that emails from the same user pairs
      (based on 'from' and 'to' fields) are not split across different sets to prevent data leakage.
@@ -97,14 +97,22 @@ def split_data(df, test_size=0.2, valid_size=0.1):
     df['pair_id'] = df.apply(lambda x: "_".join(sorted([x['from'], x['to']])), axis=1)
 
     # Split once for Train/(Validation + Test)
-    gs = GroupShuffleSplit(n_splits=1, train_size=1.0-test_size)
+    gs = GroupShuffleSplit(
+        n_splits=1,
+        train_size=1.0 - test_size,
+        random_state=seed,
+    )
     train_idx, temp_idx = next(gs.split(df, groups=df['pair_id']))
 
     train_df = df.iloc[train_idx]
     temp_df = df.iloc[temp_idx]
 
     # Split the remainder into Validation/Test
-    gs_val = GroupShuffleSplit(n_splits=1, train_size=valid_size/(valid_size+test_size))
+    gs_val = GroupShuffleSplit(
+        n_splits=1,
+        train_size=valid_size / (valid_size + test_size),
+        random_state=seed,
+    )
     val_idx, test_idx = next(gs_val.split(temp_df, groups=temp_df['pair_id']))
 
     val_df = temp_df.iloc[val_idx]
