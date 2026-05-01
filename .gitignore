@@ -4,3 +4,6 @@ checkpoints/
 *.pt
 *.bin
 *.safetensors
+echo maildir.zip >> .gitignore
+__pycache__/
+.pyc files

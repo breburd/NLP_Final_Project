@@ -26,6 +26,22 @@ And install the required packages:
 ```
 conda activate nlp_enron_final
 pip install -r requirements.txt
+pip install pytest
+```
+
+### Run the Tests
+From the project root, run the pytest suite with:
+```
+python -m pytest -q
+```
+
+If you want more detailed test output, run:
+```
+python -m pytest
+`or`
+python -m pytest -v
+`or`
+python -m pytest -s
 ```
 
 ### Download the Dataset
