@@ -36,13 +36,12 @@ python -m pytest -q
 ```
 
 If you want more detailed test output, run:
-```
-python -m pytest
-`or`
-python -m pytest -v
-`or`
-python -m pytest -s
-```
+
+`python -m pytest`
+<br>**or**<br> 
+`python -m pytest -v`
+<br>**or**<br>
+`python -m pytest -s`
 
 ### Download the Dataset
 Since privilged data is privileged, there are no existing public datasets that could be used for these experiments.
