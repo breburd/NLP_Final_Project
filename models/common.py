@@ -122,7 +122,7 @@ def load_data(data_path):
     return df
 
 
-def split_data(df, test_size=0.2, valid_size=0.1, seed=42):
+def split_data(df, test_size=0.2, valid_size=0.1):
     """
     Split dataset into train, validation, and test sets.
 
@@ -134,7 +134,6 @@ def split_data(df, test_size=0.2, valid_size=0.1, seed=42):
         df (pandas.DataFrame): Input dataset.
         test_size (float, optional): Proportion for test set.
         valid_size (float, optional): Proportion for validation set.
-        seed (int, optional): Random seed for reproducibility.
 
     Returns:
         tuple[pandas.DataFrame, pandas.DataFrame, pandas.DataFrame]:
@@ -147,7 +146,6 @@ def split_data(df, test_size=0.2, valid_size=0.1, seed=42):
     gs = GroupShuffleSplit(
         n_splits=1,
         train_size=1.0 - test_size,
-        random_state=seed,
     )
     train_idx, temp_idx = next(gs.split(df, groups=df['pair_id']))
 
@@ -158,7 +156,6 @@ def split_data(df, test_size=0.2, valid_size=0.1, seed=42):
     gs_val = GroupShuffleSplit(
         n_splits=1,
         train_size=valid_size / (valid_size + test_size),
-        random_state=seed,
     )
     val_idx, test_idx = next(gs_val.split(temp_df, groups=temp_df['pair_id']))
 
