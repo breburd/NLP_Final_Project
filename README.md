@@ -68,6 +68,8 @@ to create the dataset used within training and testing:
 ### (Optional) Command Line Arguments
 `--data_path`: The path to the directory to the dataset
 
+`--train_path`, `--valid_path`, `--test_path`: Optional paths to pre-made split CSV files. If all three are provided, the model scripts will use those files directly instead of re-splitting the full dataset.
+
 `--output_dir`: The path to the output directory for the experiment
 
 `--model_name`: The pretrained model and tokenizer name (see HuggingFace). Default: "bert-base-uncased"
@@ -94,6 +96,32 @@ to create the dataset used within training and testing:
 Use Google Colab to leverage the GPUs within a Jupyter Notebook file. The `runner.ipynb` 
 includes the experiments we ran for reproducing purposes. This sets up the environment
 with th expected versions that can be run together. 
+
+For the fixed-split workflow, first create the deterministic split files once:
+
+```bash
+python split_dataset.py --data_path preprocess/enron_emails_labeled.csv --output_dir preprocess/splits
+```
+
+This writes:
+
+- `preprocess/splits/train.csv`
+- `preprocess/splits/valid.csv`
+- `preprocess/splits/test.csv`
+
+You can then run a baseline directly with those saved splits:
+
+```bash
+python models/logistic_regression.py --train_path preprocess/splits/train.csv --valid_path preprocess/splits/valid.csv --test_path preprocess/splits/test.csv
+```
+
+Or run the orchestration script with the same fixed split files:
+
+```bash
+python run_baselines.py --train_path preprocess/splits/train.csv --valid_path preprocess/splits/valid.csv --test_path preprocess/splits/test.csv --run_keyword
+```
+
+The Colab notebook `runner_10_experiments.ipynb` now follows this workflow too: it creates the splits once, then reuses the same `train`, `valid`, and `test` files across all 10 BERT experiments.
 
 ## Make Predictions
 The trained models created from our experiments have been provided for testing the predictions 

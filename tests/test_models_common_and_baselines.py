@@ -153,6 +153,33 @@ def test_split_data_returns_three_parts():
     assert set(train_df["pair_id"]).isdisjoint(set(test_df["pair_id"]))
 
 
+def test_load_pre_split_data_returns_three_loaded_frames(temp_workspace):
+    train_path = temp_workspace / "train.csv"
+    valid_path = temp_workspace / "valid.csv"
+    test_path = temp_workspace / "test.csv"
+
+    for path, subject in [
+        (train_path, "train"),
+        (valid_path, "valid"),
+        (test_path, "test"),
+    ]:
+        pd.DataFrame(
+            {
+                "from": ["amy"],
+                "to": ["bob"],
+                "subject": [subject],
+                "body": ["body"],
+                "label": [1],
+            }
+        ).to_csv(path, index=False)
+
+    train_df, valid_df, test_df = common.load_pre_split_data(train_path, valid_path, test_path)
+
+    assert train_df.loc[0, "subject"] == "train"
+    assert valid_df.loc[0, "subject"] == "valid"
+    assert test_df.loc[0, "subject"] == "test"
+
+
 def test_get_scores_returns_metric_dictionary():
     """
     Verify that get_scores returns a dictionary of evaluation metrics.
@@ -208,6 +235,9 @@ def test_keyword_filter_main_saves_results(monkeypatch, temp_workspace):
 
     args = Namespace(
         data_path="fake.csv",
+        train_path="",
+        valid_path="",
+        test_path="",
         output_dir=str(temp_workspace),
         seed=42,
     )
@@ -243,6 +273,45 @@ def test_keyword_filter_main_saves_results(monkeypatch, temp_workspace):
     assert (temp_workspace / "sample_predictions.json").exists()
 
 
+def test_keyword_filter_main_uses_pre_split_files(monkeypatch, temp_workspace):
+    args = Namespace(
+        data_path="fake.csv",
+        train_path="train.csv",
+        valid_path="valid.csv",
+        test_path="test.csv",
+        output_dir=str(temp_workspace),
+        seed=42,
+    )
+    fake_df = pd.DataFrame(
+        {
+            "text": ["privileged note", "hello there"],
+            "label": [1, 0],
+            "subject": ["one", "two"],
+        }
+    )
+    saved = {}
+
+    monkeypatch.setattr(
+        keyword_filter.argparse.ArgumentParser,
+        "parse_args",
+        lambda self: args,
+    )
+    monkeypatch.setattr(
+        keyword_filter,
+        "load_pre_split_data",
+        lambda train_path, valid_path, test_path: (fake_df, fake_df, fake_df),
+    )
+    monkeypatch.setattr(
+        keyword_filter,
+        "save_json",
+        lambda data, path: saved.update({"data": data, "path": path}),
+    )
+
+    keyword_filter.main()
+
+    assert saved["data"]["num_train"] == len(fake_df)
+
+
 def test_build_model_has_two_steps():
     """
     Verify that logistic regression pipeline contains expected steps.
@@ -264,6 +333,9 @@ def test_logistic_main_saves_metrics(monkeypatch, temp_workspace):
     
     args = Namespace(
         data_path="fake.csv",
+        train_path="",
+        valid_path="",
+        test_path="",
         output_dir=str(temp_workspace),
         max_features=500,
         seed=42,
@@ -306,3 +378,51 @@ def test_logistic_main_saves_metrics(monkeypatch, temp_workspace):
 
     assert saved["data"]["baseline"] == "logistic_regression"
     assert (temp_workspace / "model.pkl").exists()
+
+
+def test_logistic_main_uses_pre_split_files(monkeypatch, temp_workspace):
+    args = Namespace(
+        data_path="fake.csv",
+        train_path="train.csv",
+        valid_path="valid.csv",
+        test_path="test.csv",
+        output_dir=str(temp_workspace),
+        max_features=500,
+        seed=42,
+    )
+    fake_df = pd.DataFrame(
+        {
+            "text": ["email one", "email two"],
+            "label": [0, 1],
+        }
+    )
+    saved = {}
+
+    class FakeModel:
+        def fit(self, texts, labels):
+            self.was_fit = True
+
+        def predict(self, texts):
+            return np.array([0, 1])
+
+    monkeypatch.setattr(
+        logistic_regression.argparse.ArgumentParser,
+        "parse_args",
+        lambda self: args,
+    )
+    monkeypatch.setattr(
+        logistic_regression,
+        "load_pre_split_data",
+        lambda train_path, valid_path, test_path: (fake_df, fake_df, fake_df),
+    )
+    monkeypatch.setattr(logistic_regression, "build_model", lambda value: FakeModel())
+    monkeypatch.setattr(
+        logistic_regression,
+        "save_json",
+        lambda data, path: saved.update({"data": data, "path": path}),
+    )
+    monkeypatch.setattr(logistic_regression.pickle, "dump", lambda model, file_obj: None)
+
+    logistic_regression.main()
+
+    assert saved["data"]["num_test"] == len(fake_df)

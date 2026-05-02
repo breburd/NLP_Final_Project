@@ -5,8 +5,9 @@ per user. This will help us understand the dataset better and plan our
 preprocessing steps accordingly.
 
 Load the dataset from the enron_emails_labeled.csv file and print out the required information.
-import pandas as pd
 """
+
+import pandas as pd
 
 def print_dataset_info(file_path: str):
     """

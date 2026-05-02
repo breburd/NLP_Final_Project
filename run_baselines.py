@@ -45,6 +45,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_path", default="")
     parser.add_argument("--data_path", default=str(DEFAULT_DATA_PATH))
+    parser.add_argument("--train_path", default="")
+    parser.add_argument("--valid_path", default="")
+    parser.add_argument("--test_path", default="")
     parser.add_argument("--run_preprocess", action="store_true")
     parser.add_argument("--run_keyword", action="store_true")
     parser.add_argument("--run_logistic", action="store_true")
@@ -76,26 +79,60 @@ def main():
         )
 
     if args.run_keyword or want_everything:
-        run_one_command([sys.executable, "models/keyword_filter.py", "--data_path", args.data_path])
+        command = [sys.executable, "models/keyword_filter.py", "--data_path", args.data_path]
+        if args.train_path and args.valid_path and args.test_path:
+            command.extend(
+                [
+                    "--train_path",
+                    args.train_path,
+                    "--valid_path",
+                    args.valid_path,
+                    "--test_path",
+                    args.test_path,
+                ]
+            )
+        run_one_command(command)
 
     if args.run_logistic or want_everything:
-        run_one_command([sys.executable, "models/logistic_regression.py", "--data_path", args.data_path])
+        command = [sys.executable, "models/logistic_regression.py", "--data_path", args.data_path]
+        if args.train_path and args.valid_path and args.test_path:
+            command.extend(
+                [
+                    "--train_path",
+                    args.train_path,
+                    "--valid_path",
+                    args.valid_path,
+                    "--test_path",
+                    args.test_path,
+                ]
+            )
+        run_one_command(command)
 
     if args.run_bert or want_everything:
-        run_one_command(
-            [
-                sys.executable,
-                "models/bert_baseline.py",
-                "--data_path",
-                args.data_path,
-                "--train_size",
-                str(args.bert_train_size),
-                "--valid_size",
-                str(args.bert_valid_size),
-                "--test_size",
-                str(args.bert_test_size),
-            ]
-        )
+        command = [
+            sys.executable,
+            "models/bert_baseline.py",
+            "--data_path",
+            args.data_path,
+            "--train_size",
+            str(args.bert_train_size),
+            "--valid_size",
+            str(args.bert_valid_size),
+            "--test_size",
+            str(args.bert_test_size),
+        ]
+        if args.train_path and args.valid_path and args.test_path:
+            command.extend(
+                [
+                    "--train_path",
+                    args.train_path,
+                    "--valid_path",
+                    args.valid_path,
+                    "--test_path",
+                    args.test_path,
+                ]
+            )
+        run_one_command(command)
 
     print("")
     print("done")
