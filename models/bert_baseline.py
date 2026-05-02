@@ -290,12 +290,8 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=2)
 
-    exp_tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
-    exp_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
-
     print("Moving model to device ..." + str(args.device))
     model.to(args.device)
-    exp_model.to(args.device)
 
     print("Loading the data into PyTorch Datasets...")
     train_dataset = EnronDataset(
@@ -371,9 +367,9 @@ if __name__ == "__main__":
 
     print("Evaluating the model on the validation and test sets...")
     valid_output = trainer.predict(valid_dataset)
-    valid_explanations = create_explanations(valid_dataset.email, valid_dataset.privileged, exp_model, exp_tokenizer)
+    # valid_explanations = create_explanations(valid_dataset.email, valid_dataset.privileged, exp_model, exp_tokenizer)
     test_output = trainer.predict(test_dataset)
-    test_explanations = create_explanations(test_dataset.email, test_dataset.privileged, exp_model, exp_tokenizer)
+    # test_explanations = create_explanations(test_dataset.email, test_dataset.privileged, exp_model, exp_tokenizer)
 
     valid_pred = np.argmax(valid_output.predictions, axis=-1)
     test_pred = np.argmax(test_output.predictions, axis=-1)
@@ -403,8 +399,6 @@ if __name__ == "__main__":
         "num_test": len(test_df),
         "valid": valid_scores,
         "test": test_scores,
-        "valid_explanations": valid_explanations,
-        "test_explanations": test_explanations,
     }
 
     print("Saving the model and results...")
