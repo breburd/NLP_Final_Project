@@ -130,4 +130,8 @@ the new data to be fed in. Try out the models yourself by running the following 
 `python make_prediction.py --model_name=<model_name> --email_json_path=test_emails.json`.
 
 The following model names can be used:
-- baseline_bert
+- bert_baseline_default
+- bert_baseline_lr5e-6
+- bert_baseline_train10k
+- bert_baseline_train45k
+- roberta_baseline
