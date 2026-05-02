@@ -316,11 +316,6 @@ if __name__ == "__main__":
         max_len=args.max_length
     )
 
-    print(" >>>>>>>> Initializing the data loaders ... ")
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size)
-    validation_dataloader = DataLoader(valid_dataset, batch_size=args.batch_size)
-    test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size)
-
     class_weights = compute_class_weight(
         class_weight="balanced",
         classes=np.array([0, 1]),

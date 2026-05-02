@@ -1,0 +1,6 @@
+[
+    {"from": "user@example.com", "to": "recipient@example.com", "subject": "Test Email", "body": "This is a simple test email."},
+    {"from": "user@example.com", "to": "recipient@example.com", "subject": "Legal Advice Requested", "body": "I am writing to seek your legal advice regarding the upcoming renewal of the Acme contract. Specifically, I would like to understand our options for termination based on the recent breach of performance clause, as I discussed with you over the phone. Please review the attached contract and provide your legal opinion on the potential liabilities."},
+    {"from": "user@example.com", "to": "recipient@example.com", "subject": "PRIVELEGED AND CONFIDENTIAL", "body": "This is a simple test email."},
+    {"from": "user@example.com", "to": "recipient@example.com", "subject": "Legal Terms", "body": "I am reaching out for a legal definition of \"privileged\"."}
+]
