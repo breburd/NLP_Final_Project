@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments, AutoModelForSeq2SeqLM
 from torch.utils.data import DataLoader
-from common import DEFAULT_DATA_PATH, DEFAULT_OUTPUT_DIR, get_scores, load_data, make_folder, print_gpu_memory, save_json, split_data, seed_everything
+from common import DEFAULT_DATA_PATH, DEFAULT_OUTPUT_DIR, get_scores, load_data, load_pre_split_data, make_folder, print_gpu_memory, save_json, split_data, seed_everything
 
 
 class EnronDataset(Dataset):
@@ -254,6 +254,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", default=str(DEFAULT_DATA_PATH))
+    parser.add_argument("--train_path", default="")
+    parser.add_argument("--valid_path", default="")
+    parser.add_argument("--test_path", default="")
     parser.add_argument("--output_dir", default=str(DEFAULT_OUTPUT_DIR / "bert_baseline"))
     parser.add_argument("--model_name", default="bert-base-uncased")
     parser.add_argument("--max_length", type=int, default=256)
@@ -269,8 +272,15 @@ if __name__ == "__main__":
 
     seed_everything(args.seed)
     print("Loading the data...")
-    df = load_data(args.data_path)
-    train_df, valid_df, test_df = split_data(df)
+    if args.train_path and args.valid_path and args.test_path:
+        train_df, valid_df, test_df = load_pre_split_data(
+            args.train_path,
+            args.valid_path,
+            args.test_path,
+        )
+    else:
+        df = load_data(args.data_path)
+        train_df, valid_df, test_df = split_data(df, seed=args.seed)
 
     train_df = maybe_take_some_rows(train_df, args.train_size)
     valid_df = maybe_take_some_rows(valid_df, args.valid_size)

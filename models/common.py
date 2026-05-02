@@ -122,7 +122,27 @@ def load_data(data_path):
     return df
 
 
-def split_data(df, test_size=0.2, valid_size=0.1):
+def load_pre_split_data(train_path, valid_path, test_path):
+    """
+    Load already-split train, validation, and test CSV files.
+
+    Args:
+        train_path (str or pathlib.Path): Path to training CSV.
+        valid_path (str or pathlib.Path): Path to validation CSV.
+        test_path (str or pathlib.Path): Path to test CSV.
+
+    Returns:
+        tuple[pandas.DataFrame, pandas.DataFrame, pandas.DataFrame]:
+            Train, validation, and test DataFrames.
+    """
+
+    train_df = load_data(train_path)
+    valid_df = load_data(valid_path)
+    test_df = load_data(test_path)
+    return train_df, valid_df, test_df
+
+
+def split_data(df, test_size=0.2, valid_size=0.1, seed=42):
     """
     Split dataset into train, validation, and test sets.
 
@@ -146,6 +166,7 @@ def split_data(df, test_size=0.2, valid_size=0.1):
     gs = GroupShuffleSplit(
         n_splits=1,
         train_size=1.0 - test_size,
+        random_state=seed,
     )
     train_idx, temp_idx = next(gs.split(df, groups=df['pair_id']))
 
@@ -156,6 +177,7 @@ def split_data(df, test_size=0.2, valid_size=0.1):
     gs_val = GroupShuffleSplit(
         n_splits=1,
         train_size=valid_size / (valid_size + test_size),
+        random_state=seed + 1,
     )
     val_idx, test_idx = next(gs_val.split(temp_df, groups=temp_df['pair_id']))
 

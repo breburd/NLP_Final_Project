@@ -125,6 +125,9 @@ def test_run_baselines_main_runs_all_commands(monkeypatch):
     args = Namespace(
         dataset_path="fake_dataset",
         data_path="fake_data.csv",
+        train_path="",
+        valid_path="",
+        test_path="",
         run_preprocess=False,
         run_keyword=False,
         run_logistic=False,
@@ -162,6 +165,9 @@ def test_run_baselines_main_stops_when_dataset_path_is_missing(monkeypatch):
     args = Namespace(
         dataset_path="",
         data_path="fake_data.csv",
+        train_path="",
+        valid_path="",
+        test_path="",
         run_preprocess=True,
         run_keyword=False,
         run_logistic=False,
@@ -180,3 +186,35 @@ def test_run_baselines_main_stops_when_dataset_path_is_missing(monkeypatch):
 
     with pytest.raises(SystemExit):
         run_baselines.main()
+
+
+def test_run_baselines_passes_pre_split_paths(monkeypatch):
+    args = Namespace(
+        dataset_path="",
+        data_path="fake_data.csv",
+        train_path="train.csv",
+        valid_path="valid.csv",
+        test_path="test.csv",
+        run_preprocess=False,
+        run_keyword=True,
+        run_logistic=True,
+        run_bert=True,
+        run_all=False,
+        bert_train_size=10,
+        bert_valid_size=5,
+        bert_test_size=5,
+    )
+    commands = []
+
+    monkeypatch.setattr(
+        run_baselines.argparse.ArgumentParser,
+        "parse_args",
+        lambda self: args,
+    )
+    monkeypatch.setattr(run_baselines, "run_one_command", lambda cmd: commands.append(cmd))
+
+    run_baselines.main()
+
+    assert "--train_path" in commands[0]
+    assert "--valid_path" in commands[0]
+    assert "--test_path" in commands[0]

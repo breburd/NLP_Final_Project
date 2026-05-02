@@ -4,7 +4,7 @@ import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from common import DEFAULT_DATA_PATH, DEFAULT_OUTPUT_DIR, get_scores, load_data, make_folder, save_json, split_data
+from common import DEFAULT_DATA_PATH, DEFAULT_OUTPUT_DIR, get_scores, load_data, load_pre_split_data, make_folder, save_json, split_data
 
 
 def build_model(max_features):
@@ -68,13 +68,23 @@ def main():
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", default=str(DEFAULT_DATA_PATH))
+    parser.add_argument("--train_path", default="")
+    parser.add_argument("--valid_path", default="")
+    parser.add_argument("--test_path", default="")
     parser.add_argument("--output_dir", default=str(DEFAULT_OUTPUT_DIR / "logistic_regression"))
     parser.add_argument("--max_features", type=int, default=50000)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    df = load_data(args.data_path)
-    train_df, valid_df, test_df = split_data(df, seed=args.seed)
+    if args.train_path and args.valid_path and args.test_path:
+        train_df, valid_df, test_df = load_pre_split_data(
+            args.train_path,
+            args.valid_path,
+            args.test_path,
+        )
+    else:
+        df = load_data(args.data_path)
+        train_df, valid_df, test_df = split_data(df, seed=args.seed)
 
     model = build_model(args.max_features)
     model.fit(train_df["text"], train_df["label"])
