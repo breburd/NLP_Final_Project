@@ -1,3 +1,11 @@
+"""
+Tests for CLI orchestration and utility scripts.
+
+Validates file renaming utilities, dataset inspection output,
+and baseline pipeline execution through command-line interfaces.
+Ensures correct behavior of subprocess execution and argument handling.
+"""
+
 from argparse import Namespace
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,6 +21,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_fix_filenames_renames_file_with_dot(monkeypatch, temp_workspace):
+    """
+    Verify that fix_filenames renames files ending with a trailing dot.
+
+    Uses monkeypatch to simulate filesystem traversal and capture
+    rename operations.
+    """
+
     monkeypatch.setattr("os.walk", lambda root: [])
     rename_files = load_module_from_path(
         "rename_files_for_test",
@@ -39,6 +54,12 @@ def test_fix_filenames_renames_file_with_dot(monkeypatch, temp_workspace):
 
 
 def test_print_dataset_info_prints_numbers(capsys, monkeypatch, temp_workspace):
+    """
+    Verify that print_dataset_info outputs correct dataset statistics.
+
+    Mocks CSV loading and captures printed output to validate expected values.
+    """
+
     fake_df = pd.DataFrame(
         {
             "from": ["a", "b"],
@@ -63,6 +84,11 @@ def test_print_dataset_info_prints_numbers(capsys, monkeypatch, temp_workspace):
 
 
 def test_run_one_command_success(monkeypatch):
+    """
+    Verify that run_one_command completes successfully when subprocess
+    returns a zero exit code.
+    """
+
     monkeypatch.setattr(
         run_baselines.subprocess,
         "run",
@@ -73,6 +99,12 @@ def test_run_one_command_success(monkeypatch):
 
 
 def test_run_one_command_failure(monkeypatch):
+    """
+    Verify that run_one_command raises SystemExit on failure.
+
+    Simulates a non-zero subprocess return code.
+    """
+
     monkeypatch.setattr(
         run_baselines.subprocess,
         "run",
@@ -84,6 +116,12 @@ def test_run_one_command_failure(monkeypatch):
 
 
 def test_run_baselines_main_runs_all_commands(monkeypatch):
+    """
+    Verify that main executes all baseline commands when run_all is enabled.
+
+    Uses monkeypatch to capture executed commands and validate order.
+    """
+
     args = Namespace(
         dataset_path="fake_dataset",
         data_path="fake_data.csv",
@@ -115,6 +153,12 @@ def test_run_baselines_main_runs_all_commands(monkeypatch):
 
 
 def test_run_baselines_main_stops_when_dataset_path_is_missing(monkeypatch):
+    """
+    Verify that main exits when required dataset_path is missing.
+
+    Ensures proper validation of command-line arguments.
+    """
+    
     args = Namespace(
         dataset_path="",
         data_path="fake_data.csv",

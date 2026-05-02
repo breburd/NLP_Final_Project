@@ -12,8 +12,15 @@ import torch
 
 def seed_everything(seed=42):
     """
-    Set random seeds for reproducibility across random, numpy, and torch libraries.
+    Set random seeds for reproducibility.
+
+    Ensures consistent results across Python's random module,
+    NumPy, and PyTorch.
+
+    Args:
+        seed (int, optional): Seed value to use. Defaults to 42.
     """
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -26,11 +33,16 @@ DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "outputs" / "baselines"
 
 def print_gpu_memory():
     """
-    Print the amount of GPU memory used by the current process
-    This is useful for debugging memory issues on the GPU
+    Print GPU memory usage statistics.
 
-    Source: base_classification.py from Assignment 6
+    Displays allocated, reserved, and maximum reserved GPU memory
+    for the current process. Also prints output from `nvidia-smi`
+    for additional diagnostics.
+
+    Notes:
+        Only runs if a CUDA-enabled GPU is available.
     """
+
     # check if gpu is available
     if torch.cuda.is_available():
         print("torch.cuda.memory_allocated: %fGB" % (torch.cuda.memory_allocated(0) / 1024 / 1024 / 1024))
@@ -43,9 +55,15 @@ def print_gpu_memory():
 
 def make_folder(folder_path):
     """
-    Create a folder at the specified path if it does not already exist.
-    This is useful for ensuring that the output directory exists before saving files to it.
+    Create a directory if it does not exist.
+
+    Args:
+        folder_path (str or pathlib.Path): Path to the directory.
+
+    Returns:
+        pathlib.Path: Path object of the created/existing directory.
     """
+
     folder = Path(folder_path)
     folder.mkdir(parents=True, exist_ok=True)
     return folder
@@ -53,11 +71,14 @@ def make_folder(folder_path):
 
 def fix_csv_limit():
     """
-    Fix the CSV field size limit to avoid errors when loading large CSV files.
-    This is necessary because the default field size limit may be too small for some datasets, leading
-    to OverflowError when trying to load the data. The function attempts to set the field size limit to the maximum
-    possible value, and if that fails due to an OverflowError, it reduces the limit by a factor of 10 and tries again until it succeeds.
+    Increase CSV field size limit to handle large files.
+
+    Attempts to set the maximum allowable CSV field size to avoid
+    OverflowError when reading large text fields. If the maximum
+    value is too large, it progressively reduces the size until
+    successful.
     """
+    
     size = sys.maxsize
     while size > 0:
         try:
@@ -71,8 +92,24 @@ def fix_csv_limit():
 
 def load_data(data_path):
     """
-    Load the dataset from a CSV file, combine the subject and body into a single text field,
-    and return a cleaned DataFrame with the necessary columns."""
+    Load and preprocess the dataset from a CSV file.
+
+    Cleans missing values, combines subject and body into a single
+    text field, and ensures correct data types.
+
+    Args:
+        data_path (str or pathlib.Path): Path to the CSV file.
+
+    Returns:
+        pandas.DataFrame: Cleaned DataFrame with columns:
+            - from (str)
+            - to (str)
+            - subject (str)
+            - body (str)
+            - text (str)
+            - label (int)
+    """
+
     fix_csv_limit()
     df = pd.read_csv(data_path, encoding="utf-8", engine="python")
     df["from"] = df["from"].fillna("").astype(str)
@@ -87,13 +124,23 @@ def load_data(data_path):
 
 def split_data(df, test_size=0.2, valid_size=0.1, seed=42):
     """
-     Split the dataset into train, validation, and test sets while ensuring that emails from the same user pairs
-     (based on 'from' and 'to' fields) are not split across different sets to prevent data leakage.
-     This is done by creating a 'pair_id' for each email based on the sorted combination
-     of the 'from' and 'to' fields, and then using GroupShuffleSplit to split the data based on these pairs."""
-    # Split into train/validation/test -> We want unique users in each split to prevent data leakage.
-    # This ensures the model does not learn user-specific patterns that could lead to overfitting
-    # and poor generalization on unseen users.
+    Split dataset into train, validation, and test sets.
+
+    Uses group-based splitting to prevent data leakage by ensuring
+    emails from the same sender-recipient pair are not split across
+    different sets.
+
+    Args:
+        df (pandas.DataFrame): Input dataset.
+        test_size (float, optional): Proportion for test set.
+        valid_size (float, optional): Proportion for validation set.
+        seed (int, optional): Random seed for reproducibility.
+
+    Returns:
+        tuple[pandas.DataFrame, pandas.DataFrame, pandas.DataFrame]:
+            Train, validation, and test DataFrames.
+    """
+
     df['pair_id'] = df.apply(lambda x: "_".join(sorted([x['from'], x['to']])), axis=1)
 
     # Split once for Train/(Validation + Test)
@@ -128,8 +175,24 @@ def split_data(df, test_size=0.2, valid_size=0.1, seed=42):
 
 def get_scores(y_true, y_pred):
     """
-    Calculate and return a dictionary of evaluation metrics including accuracy, precision, recall, F1 score, and a classification report.
+    Compute classification evaluation metrics.
+
+    Calculates accuracy, precision, recall, F1 score, and a detailed
+    classification report.
+
+    Args:
+        y_true (array-like): Ground truth labels.
+        y_pred (array-like): Predicted labels.
+
+    Returns:
+        dict: Dictionary containing:
+            - accuracy (float)
+            - precision (float)
+            - recall (float)
+            - f1 (float)
+            - classification_report (str)
     """
+
     return {
         "accuracy": float(accuracy_score(y_true, y_pred)),
         "precision": float(precision_score(y_true, y_pred, zero_division=0)),
@@ -141,8 +204,15 @@ def get_scores(y_true, y_pred):
 
 def save_json(data, output_path):
     """
-    Save a dictionary as a JSON file at the specified output path. The function ensures that the output directory exists before saving the file.
+    Save data as a JSON file.
+
+    Ensures the output directory exists before writing the file.
+
+    Args:
+        data (dict): Data to save.
+        output_path (str or pathlib.Path): Destination file path.
     """
+    
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(data, indent=2), encoding="utf-8")

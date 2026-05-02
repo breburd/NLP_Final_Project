@@ -15,12 +15,42 @@ KEYWORDS = [
 
 
 def run_keyword_model(text_series):
+    """
+    Apply a keyword-based classification model.
+
+    Flags text as positive (1) if any predefined keyword is present,
+    otherwise returns negative (0).
+
+    Args:
+        text_series (pandas.Series): Series of text data.
+
+    Returns:
+        pandas.Series: Binary predictions (1 = keyword match, 0 = no match).
+    """
+
     pattern = "|".join(re.escape(word) for word in KEYWORDS)
     matches = text_series.str.lower().str.contains(pattern, regex=True, na=False)
     return matches.astype(int)
 
 
 def main():
+    """
+    Execute keyword-based baseline pipeline.
+
+    Loads the dataset, splits it into train/validation/test sets,
+    applies a simple keyword-matching model, evaluates performance,
+    and saves results and sample predictions to disk.
+
+    Command-line Args:
+        --data_path (str): Path to input dataset.
+        --output_dir (str): Directory to save outputs.
+        --seed (int): Random seed for reproducibility.
+
+    Outputs:
+        - metrics.json: Evaluation results for validation and test sets.
+        - sample_predictions.json: Sample predictions from the test set.
+    """
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", default=str(DEFAULT_DATA_PATH))
     parser.add_argument("--output_dir", default=str(DEFAULT_OUTPUT_DIR / "keyword_filter"))

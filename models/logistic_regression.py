@@ -4,11 +4,23 @@ import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-
 from common import DEFAULT_DATA_PATH, DEFAULT_OUTPUT_DIR, get_scores, load_data, make_folder, save_json, split_data
 
 
 def build_model(max_features):
+    """
+    Build a TF-IDF + Logistic Regression pipeline.
+
+    The pipeline first transforms text into TF-IDF features and then
+    applies a logistic regression classifier with class balancing.
+
+    Args:
+        max_features (int): Maximum number of TF-IDF features.
+
+    Returns:
+        sklearn.pipeline.Pipeline: Configured text classification pipeline.
+    """
+        
     model = Pipeline(
         [
             (
@@ -35,6 +47,25 @@ def build_model(max_features):
 
 
 def main():
+    """
+    Execute TF-IDF + Logistic Regression baseline pipeline.
+
+    Loads the dataset, splits it into train/validation/test sets,
+    trains a text classification model using TF-IDF features and
+    logistic regression, evaluates performance, and saves results
+    and the trained model.
+
+    Command-line Args:
+        --data_path (str): Path to input dataset.
+        --output_dir (str): Directory to save outputs.
+        --max_features (int): Maximum TF-IDF feature size.
+        --seed (int): Random seed for reproducibility.
+
+    Outputs:
+        - metrics.json: Evaluation metrics for validation and test sets.
+        - model.pkl: Serialized trained model pipeline.
+    """
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", default=str(DEFAULT_DATA_PATH))
     parser.add_argument("--output_dir", default=str(DEFAULT_OUTPUT_DIR / "logistic_regression"))

@@ -12,6 +12,14 @@ PREPROCESS_MODULE = load_module_from_path(
 
 
 def test_read_email_returns_text(temp_workspace):
+    """
+    Tests for preprocessing and labeling components.
+
+    Validates email loading, parsing, and Snorkel labeling functions.
+    Ensures correct extraction of structured fields and expected
+    behavior of heuristic labeling rules.
+    """
+
     loader = EnronDatasetLoader(str(temp_workspace))
     email_file = temp_workspace / "message.txt"
     email_file.write_text("hello email", encoding="latin-1")
@@ -22,6 +30,10 @@ def test_read_email_returns_text(temp_workspace):
 
 
 def test_read_email_returns_empty_string_for_missing_file(temp_workspace):
+    """
+    Verify that _read_email returns empty string when file is missing.
+    """
+    
     loader = EnronDatasetLoader(str(temp_workspace))
 
     result = loader._read_email(temp_workspace / "missing.txt")
@@ -30,6 +42,13 @@ def test_read_email_returns_empty_string_for_missing_file(temp_workspace):
 
 
 def test_load_emails_collects_files(temp_workspace):
+    """
+    Verify that load_emails collects email files and assigns correct user.
+
+    Ensures that emails are discovered recursively and metadata is
+    correctly populated.
+    """
+
     user_folder = temp_workspace / "person1" / "inbox"
     user_folder.mkdir(parents=True)
     email_file = user_folder / "mail1.txt"
@@ -43,6 +62,10 @@ def test_load_emails_collects_files(temp_workspace):
 
 
 def test_clean_removes_extra_spaces():
+    """
+    Verify that clean normalizes whitespace in text.
+    """
+        
     parser = EmailParser()
 
     result = parser.clean("hello   there \n\n friend")
@@ -51,6 +74,10 @@ def test_clean_removes_extra_spaces():
 
 
 def test_parse_reads_basic_email_fields():
+    """
+    Verify that parse extracts header fields and body correctly.
+    """
+
     parser = EmailParser()
     raw_email = "From: Amy\nTo: Bob\nSubject: Hi\n\nThis is the body."
 
@@ -63,6 +90,10 @@ def test_parse_reads_basic_email_fields():
 
 
 def test_lf_legal_keywords_returns_priv():
+    """
+    Verify that lf_legal_keywords returns PRIV when keywords are present.
+    """
+
     row = {"subject": "Legal Advice", "body": "This is confidential."}
 
     result = PREPROCESS_MODULE.lf_legal_keywords(row)
@@ -71,6 +102,10 @@ def test_lf_legal_keywords_returns_priv():
 
 
 def test_lf_disclaimer_returns_priv():
+    """
+    Verify that lf_disclaimer returns PRIV when disclaimer text is present.
+    """
+
     row = {"body": "This may contain privileged information."}
 
     result = PREPROCESS_MODULE.lf_disclaimer(row)
@@ -79,6 +114,10 @@ def test_lf_disclaimer_returns_priv():
 
 
 def test_lf_lawyer_email_returns_priv():
+    """
+    Verify that lf_lawyer_email returns PRIV for legal-related email addresses.
+    """
+
     row = {"from": "law.team@company.com", "to": "person@company.com"}
 
     result = PREPROCESS_MODULE.lf_lawyer_email(row)
@@ -87,6 +126,10 @@ def test_lf_lawyer_email_returns_priv():
 
 
 def test_lf_short_email_returns_not_priv():
+    """
+    Verify that lf_short_email returns NOT_PRIV for short email bodies.
+    """
+
     row = {"body": "short note"}
 
     result = PREPROCESS_MODULE.lf_short_email(row)

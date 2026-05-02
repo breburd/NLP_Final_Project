@@ -1,3 +1,10 @@
+"""
+Utility for fixing invalid filenames in datasets.
+
+Specifically addresses trailing dot issues in the Enron dataset
+that can cause compatibility problems on Windows systems.
+"""
+
 import os
 
 def fix_filenames(root_dir):

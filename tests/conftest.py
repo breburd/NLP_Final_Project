@@ -1,10 +1,21 @@
+"""
+Test utilities and environment setup for the project.
+
+Provides helper functions for dynamically loading modules and
+installing stubbed versions of external dependencies 
+(transformers, Snorkel, tqdm) to enable lightweight testing
+without requiring full library installations.
+
+Also includes pytest fixtures for managing temporary test
+workspaces.
+"""
+
 import importlib.util
 import os
 import sys
 import types
 import uuid
 from pathlib import Path
-
 import pytest
 
 
@@ -20,6 +31,20 @@ for folder in [PROJECT_ROOT, MODELS_DIR, PREPROCESS_DIR]:
 
 
 def load_module_from_path(module_name, file_path):
+    """
+    Dynamically load a Python module from a file path.
+
+    Useful for testing modules without requiring them to be installed
+    as part of the Python package.
+
+    Args:
+        module_name (str): Name to assign to the loaded module.
+        file_path (str or pathlib.Path): Path to the Python file.
+
+    Returns:
+        module: Loaded Python module.
+    """
+
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -27,6 +52,17 @@ def load_module_from_path(module_name, file_path):
 
 
 def _install_transformers_stub():
+    """
+    Install a lightweight stub for the transformers library.
+
+    If the transformers package is not available, this function
+    injects a minimal mock implementation into sys.modules to allow
+    tests to run without requiring the actual dependency.
+
+    Notes:
+        Only provides basic class interfaces required for testing.
+    """
+
     try:
         import transformers 
         return
@@ -71,8 +107,19 @@ def _install_transformers_stub():
 
 
 def _install_snorkel_stub():
+    """
+    Install a lightweight stub for the Snorkel library.
+
+    If Snorkel is not installed, this function creates minimal
+    placeholder implementations for labeling functions and models
+    so that dependent code can be tested.
+
+    Notes:
+        Stubbed methods do not perform real computations.
+    """
+
     try:
-        import snorkel  # noqa: F401
+        import snorkel
         return
     except ImportError:
         pass
@@ -115,8 +162,18 @@ def _install_snorkel_stub():
 
 
 def _install_tqdm_stub():
+    """
+    Install a lightweight stub for the tqdm library.
+
+    If tqdm is not available, replaces it with a no-op implementation
+    that simply returns the input iterable.
+
+    Notes:
+        This avoids dependency issues while preserving loop behavior.
+    """
+        
     try:
-        import tqdm  # noqa: F401
+        import tqdm 
         return
     except ImportError:
         pass
@@ -137,6 +194,20 @@ _install_tqdm_stub()
 
 @pytest.fixture
 def temp_workspace():
+    """
+    Provide a temporary directory for test execution.
+
+    Creates a unique temporary folder under the project test runtime
+    directory and ensures cleanup after the test completes.
+
+    Yields:
+        pathlib.Path: Path to the temporary directory.
+
+    Notes:
+        All files and subdirectories created within this workspace
+        are removed after the test finishes.
+    """
+
     temp_root = PROJECT_ROOT / "tests_runtime"
     temp_root.mkdir(exist_ok=True)
     temp_dir = temp_root / f"temp_{uuid.uuid4().hex}"
