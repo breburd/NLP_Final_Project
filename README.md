@@ -59,6 +59,11 @@ Percentage of privileged emails: 9.85%
 Columns :  ['from', 'to', 'subject', 'body', 'prob_label', 'label']
 ```
 
+This dataset was created using the maildir.zip dataset including in the repository. Thr following preprocessing was performed
+to create the dataset used within training and testing:
+
+- Windows issue encountered: Ran the `rename_files.py` file because the file names ended with a '.' character, which is invalid in Windows OS.
+- Ran the `preprocess/preprocess.py` file that cleaned the dataset and performed weak labeling.
 
 ### (Optional) Command Line Arguments
 `--data_path`: The path to the directory to the dataset
@@ -89,3 +94,12 @@ Columns :  ['from', 'to', 'subject', 'body', 'prob_label', 'label']
 Use Google Colab to leverage the GPUs within a Jupyter Notebook file. The `runner.ipynb` 
 includes the experiments we ran for reproducing purposes. This sets up the environment
 with th expected versions that can be run together. 
+
+## Make Predictions
+The trained models created from our experiments have been provided for testing the predictions 
+made. The `test_emails.json` file has been provided as an example for how the model expects
+the new data to be fed in. Try out the models yourself by running the following command:
+`python make_prediction.py --model_name=<model_name> --email_json_path=test_emails.json`.
+
+The following model names can be used:
+- baseline_bert
