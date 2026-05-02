@@ -8,8 +8,8 @@ import argparse
 from pathlib import Path
 import pandas as pd
 
-from common import DEFAULT_DATA_PATH, PROJECT_ROOT
-from bert_baseline import EnronDataset, MyTrainer, create_explanations
+from common import PROJECT_ROOT
+from bert_baseline import EnronDataset, create_explanations
 
 DEFAULT_MODELS_DIR = PROJECT_ROOT / "pretrained_models"
 

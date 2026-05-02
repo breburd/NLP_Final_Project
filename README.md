@@ -127,7 +127,7 @@ The Colab notebook `runner_10_experiments.ipynb` now follows this workflow too: 
 The trained models created from our experiments have been provided for testing the predictions 
 made. The `test_emails.json` file has been provided as an example for how the model expects
 the new data to be fed in. Try out the models yourself by running the following command:
-`python make_prediction.py --model_name=<model_name> --email_json_path=test_emails.json`.
+`python models/make_prediction.py --model_name=<model_name> --email_json_path=test_emails.json`.
 
 The following model names can be used:
 - bert_baseline_default
