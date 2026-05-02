@@ -12,8 +12,22 @@ from common import DEFAULT_DATA_PATH, DEFAULT_OUTPUT_DIR, get_scores, load_data,
 
 class EnronDataset(Dataset):
     """
-    Dataset for the dataset of Enron emails with yes/no labels for whether the email is privileged or not.
+    PyTorch Dataset for Enron email classification.
+
+    This dataset formats email metadata and body text into a single
+    input string for transformer-based models performing binary
+    classification (privileged vs. not privileged).
+
+    Args:
+        from_user (list[str]): List of sender email addresses.
+        to (list[str]): List of recipient email addresses.
+        subject (list[str]): List of email subject lines.
+        email (list[str]): List of email body text.
+        privileged (list[int]): Binary labels (0 or 1).
+        tokenizer (transformers.PreTrainedTokenizer): Tokenizer instance.
+        max_len (int): Maximum token length for input sequences.
     """
+    
     def __init__(self, from_user, to, subject, email, privileged, tokenizer, max_len):
         self.from_user = from_user
         self.to = to
@@ -29,9 +43,20 @@ class EnronDataset(Dataset):
 
     def __getitem__(self, index):
         """
-        This function is called by the DataLoader to get an instance of the data
-        :param index:
-        :return:
+        Retrieve a single dataset sample.
+
+        Constructs a formatted input string including metadata and email
+        content, tokenizes it, and returns tensors required for model input.
+
+        Args:
+            index (int): Index of the sample.
+
+        Returns:
+            dict: Dictionary containing:
+                - input_ids (torch.Tensor): Token IDs.
+                - attention_mask (torch.Tensor): Attention mask.
+                - labels (torch.Tensor): Ground truth label.
+                - text (str): Raw formatted input text.
         """
 
         email = str(self.email[index])
@@ -65,15 +90,36 @@ class EnronDataset(Dataset):
 
 class MyTrainer(Trainer):
     """
-    Custom Trainer class that allows for class weights to be used in the loss function. This is useful for handling 
-    class imbalance in the dataset, where one class may be more prevalent than the other. By providing class weights, 
-    we can give more importance to the minority class during training, which can help improve the model's performance on that class.
-    """    
+    Custom Hugging Face Trainer with support for class-weighted loss.
+
+    This trainer overrides the default loss computation to incorporate
+    class weights, which helps address class imbalance during training.
+
+    Args:
+        class_weights (torch.Tensor, optional): Tensor of class weights.
+        *args: Additional positional arguments for Trainer.
+        **kwargs: Additional keyword arguments for Trainer.
+    """
+
     def __init__(self, class_weights=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.class_weights = class_weights
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        """
+        Compute the loss for training.
+
+        Applies cross-entropy loss, optionally weighted by class imbalance.
+
+        Args:
+            model (torch.nn.Module): Model being trained.
+            inputs (dict): Input batch containing features and labels.
+            return_outputs (bool, optional): Whether to return model outputs.
+
+        Returns:
+            torch.Tensor or tuple: Loss value, and optionally model outputs.
+        """
+
         labels = inputs.pop("labels")
         outputs = model(**inputs)
         logits = outputs.get("logits")
@@ -92,8 +138,18 @@ class MyTrainer(Trainer):
 
 def maybe_take_some_rows(df, limit):
     """
-    If a limit is provided and the DataFrame has more rows than the limit, return only the first 'limit' rows of the DataFrame.
-    This is useful for quickly testing the model on a smaller subset of the data without having to load the entire dataset."""
+    Limit the number of rows in a DataFrame.
+
+    Useful for debugging or running experiments on smaller subsets.
+
+    Args:
+        df (pandas.DataFrame): Input DataFrame.
+        limit (int or None): Maximum number of rows to keep.
+
+    Returns:
+        pandas.DataFrame: Truncated DataFrame if limit is applied.
+    """
+
     if limit is None or limit <= 0:
         return df
     if len(df) <= limit:
@@ -103,11 +159,19 @@ def maybe_take_some_rows(df, limit):
 
 def metric_function(prediction_output):
     """
-    Compute evaluation metrics for the model's predictions. This function takes the raw output from the model's predictions,
-    extracts the logits and true labels, computes the predicted labels by taking the argmax of the logits, and then calculates
-    various evaluation metrics such as accuracy, precision, recall, and F1 score using the true labels and predicted labels. 
-    The function returns a dictionary of these metrics.
+    Compute evaluation metrics from model predictions.
+
+    Converts logits to predicted labels and calculates standard
+    classification metrics.
+
+    Args:
+        prediction_output (tuple): Tuple of (logits, labels).
+
+    Returns:
+        dict: Dictionary containing evaluation metrics such as
+            accuracy, precision, recall, and F1 score.
     """
+
     logits, labels = prediction_output
     preds = np.argmax(logits, axis=-1)
     scores = get_scores(labels, preds)
@@ -117,10 +181,21 @@ def metric_function(prediction_output):
 
 def generate_explanation(text, label, exp_model, exp_tokenizer):
     """
-    Generate an explanation for why a given email was classified as privileged or not privileged. This function takes 
-    the raw text of the email and the classification label, and uses the explanation model and tokenizer to generate a
-    natural language explanation.
+    Generate a natural language explanation for a prediction.
+
+    Uses a sequence-to-sequence model to explain why an email was
+    classified as privileged or not.
+
+    Args:
+        text (str): Input email text.
+        label (int): Predicted label (0 or 1).
+        exp_model (transformers.PreTrainedModel): Explanation model.
+        exp_tokenizer (transformers.PreTrainedTokenizer): Tokenizer.
+
+    Returns:
+        str: Generated explanation text.
     """
+
     label_str = "not privileged" if label == 1 else "privileged"
 
     prompt = f"""
@@ -154,10 +229,21 @@ def generate_explanation(text, label, exp_model, exp_tokenizer):
 
 def create_explanations(texts, labels, exp_model, exp_tokenizer):
     """
-    Generate explanations for a list of texts and their corresponding labels using the provided explanation model and tokenizer.
-    This function iterates over each text and label, generates an explanation for each pair using the generate_explanation 
-    function, and collects the explanations in a list, which is then returned.
+    Generate explanations for multiple samples.
+
+    Iterates over text-label pairs and generates explanations using
+    the provided model.
+
+    Args:
+        texts (list[str]): List of input texts.
+        labels (list[int]): Corresponding labels.
+        exp_model (transformers.PreTrainedModel): Explanation model.
+        exp_tokenizer (transformers.PreTrainedTokenizer): Tokenizer.
+
+    Returns:
+        list[str]: List of generated explanations.
     """
+
     explanations = []
     for text, label in tqdm(zip(texts, labels), total=len(texts)):
         explanation = generate_explanation(text, label, exp_model, exp_tokenizer)
@@ -165,8 +251,7 @@ def create_explanations(texts, labels, exp_model, exp_tokenizer):
     return explanations
 
 if __name__ == "__main__":
-    # Initialize the argument parser and parse the command line arguments for data path, output directory, model name, 
-    # max sequence length, number of epochs, sizes of train/validation/test sets, batch size, learning rate, and random seed.
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", default=str(DEFAULT_DATA_PATH))
     parser.add_argument("--output_dir", default=str(DEFAULT_OUTPUT_DIR / "bert_baseline"))

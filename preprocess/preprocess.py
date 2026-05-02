@@ -1,3 +1,11 @@
+"""
+Weak supervision pipeline for labeling Enron emails.
+
+Uses Snorkel labeling functions (LFs) to generate noisy labels based
+on heuristic rules (keywords, disclaimers, participants, and length).
+A LabelModel is trained to combine LF outputs into probabilistic labels.
+"""
+
 from snorkel.labeling import labeling_function
 import pandas as pd
 from snorkel.labeling import PandasLFApplier
@@ -23,7 +31,18 @@ LEGAL_KEYWORDS = [
 @labeling_function()
 def lf_legal_keywords(x):
     """
-    Label as privileged if certain legal keywords are present in the subject or body."""
+    Label emails as privileged based on legal keyword matches.
+
+    Checks whether predefined legal-related keywords appear in the
+    subject or body of the email.
+
+    Args:
+        x (pandas.Series): Row containing email fields.
+
+    Returns:
+        int: PRIV if a keyword is found, otherwise ABSTAIN.
+    """
+        
     text = (x["subject"] + " " + x["body"]).lower()
     return PRIV if any(k in text for k in LEGAL_KEYWORDS) else ABSTAIN
 
@@ -31,9 +50,18 @@ def lf_legal_keywords(x):
 @labeling_function()
 def lf_disclaimer(x):
     """
-    Label as privileged if the email contains common legal disclaimers.
-    Many privileged emails contain disclaimers like "may contain privileged information" or "confidential".
+    Label emails as privileged based on disclaimer phrases.
+
+    Detects common legal disclaimer language that often appears in
+    privileged communications.
+
+    Args:
+        x (pandas.Series): Row containing email fields.
+
+    Returns:
+        int: PRIV if disclaimer text is detected, otherwise ABSTAIN.
     """
+
     text = x["body"].lower()
     return PRIV if "may contain privileged" in text else ABSTAIN
 
@@ -41,9 +69,21 @@ def lf_disclaimer(x):
 @labeling_function()
 def lf_lawyer_email(x):
     """
-    Label as privileged if the sender or recipient email address contains legal-related terms.
-    This is a very noisy heuristic but can catch some privileged emails sent to/from lawyers.
+    Label emails as privileged based on participant email addresses.
+
+    Flags emails where sender or recipient addresses contain legal-
+    related terms ('law', 'legal').
+
+    Args:
+        x (pandas.Series): Row containing email fields.
+
+    Returns:
+        int: PRIV if legal-related terms are found, otherwise ABSTAIN.
+
+    Notes:
+        This is a high-recall but noisy heuristic.
     """
+
     participants = (x["from"] + " " + x["to"]).lower()
     return PRIV if "law" in participants or "legal" in participants else ABSTAIN
 
@@ -51,9 +91,18 @@ def lf_lawyer_email(x):
 @labeling_function()
 def lf_short_email(x):
     """
-    Label as not privileged if the email body is very short (e.g. < 50 characters), as privileged 
-    emails often contain more detailed information.
+    Label emails as not privileged based on length.
+
+    Assumes very short emails are unlikely to contain detailed legal
+    discussions and labels them as non-privileged.
+
+    Args:
+        x (pandas.Series): Row containing email fields.
+
+    Returns:
+        int: NOT_PRIV if email body is short, otherwise ABSTAIN.
     """
+    
     return NOT_PRIV if len(x["body"]) < 50 else ABSTAIN
 
 if __name__ == "__main__":

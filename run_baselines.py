@@ -9,6 +9,18 @@ DEFAULT_DATA_PATH = PROJECT_ROOT / "preprocess" / "enron_emails_labeled.csv"
 
 
 def run_one_command(command_list):
+    """
+    Execute a single command as a subprocess.
+
+    Parameters
+    command_list : list
+        List of command-line arguments to execute.
+
+    Raises
+    SystemExit
+        If the subprocess returns a non-zero exit code.
+    """
+
     print("")
     print("running:")
     print(" ".join(str(x) for x in command_list))
@@ -18,6 +30,18 @@ def run_one_command(command_list):
 
 
 def main():
+    """
+    Parse command-line arguments and orchestrate the pipeline.
+
+    This script allows selective execution of different components:
+    - Preprocessing
+    - Keyword-based model
+    - Logistic regression model
+    - BERT baseline model
+
+    If no specific flags are provided, all steps will run by default.
+    """
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_path", default="")
     parser.add_argument("--data_path", default=str(DEFAULT_DATA_PATH))

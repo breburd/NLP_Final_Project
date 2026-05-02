@@ -1,12 +1,34 @@
-# Print out the dataset information for the Enron dataset, including the 
-# number of emails, the number of users, and the average number of emails
-# per user. This will help us understand the dataset better and plan our
-# preprocessing steps accordingly.
+"""
+Print out the dataset information for the Enron dataset, including the 
+number of emails, the number of users, and the average number of emails
+per user. This will help us understand the dataset better and plan our
+preprocessing steps accordingly.
 
-# Load the dataset from the enron_emails_labeled.csv file and print out the required information.
+Load the dataset from the enron_emails_labeled.csv file and print out the required information.
 import pandas as pd
+"""
 
 def print_dataset_info(file_path: str):
+    """
+    Print summary statistics for the Enron email dataset.
+
+    Loads the dataset from a CSV file and computes basic descriptive
+    statistics, including total number of emails, number of unique users,
+    average emails per user, and label distribution.
+
+    Args:
+        file_path (str): Path to the CSV dataset file.
+
+    Outputs:
+        Prints:
+            - Total number of emails
+            - Number of unique users (combined from 'from' and 'to')
+            - Average number of emails per user
+            - Number and percentage of privileged emails
+            - Number of non-privileged emails
+            - List of dataset columns
+    """
+    
     df = pd.read_csv(file_path)
     
     num_emails = len(df)
