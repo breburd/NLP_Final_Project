@@ -65,31 +65,31 @@ to create the dataset used within training and testing:
 - Windows issue encountered: Ran the `rename_files.py` file because the file names ended with a '.' character, which is invalid in Windows OS.
 - Ran the `preprocess/preprocess.py` file that cleaned the dataset and performed weak labeling.
 
-### (Optional) Command Line Arguments
+### (Optional) Training Command Line Arguments
 `--data_path`: The path to the directory to the dataset
-
+<br>
 `--train_path`, `--valid_path`, `--test_path`: Optional paths to pre-made split CSV files. If all three are provided, the model scripts will use those files directly instead of re-splitting the full dataset.
-
+<br>
 `--output_dir`: The path to the output directory for the experiment
-
+<br>
 `--model_name`: The pretrained model and tokenizer name (see HuggingFace). Default: "bert-base-uncased"
-
+<br>
 `--max_length`: the maximum length of the encoding. Default: 256
-
+<br>
 `--epochs`: The number of training epochs. Default: 1
-
+<br>
 `--train_size`: The number of observations in the training dataset. Default: 30,000
-
+<br>
 `--valid_size`: The number of observations in the validation dataset. Default: 5,000
-
+<br>
 `--test_size`: The number of observations in the test dataset. Default: 5,000
-
+<br>
 `--batch_size`: The batch size. Default: 8
-
+<br>
 `--learning_rate`: The training learning rate. Default: 2e-5
-
+<br>
 `--seed`: The random seed. Default: 42
-
+<br>
 `--device`: The device to run the experiment on. Default: CUDA if available, CPU if not. 
 
 ### Run the code
@@ -145,3 +145,15 @@ The following model names can be used:
 - exp08_bert_batch16
 - exp09_bert_2epochs
 - exp10_roberta_base
+
+This python file also supports the following Command Line Arguments:
+
+`--pretrained_models_dir`: The directory that contains all the trained models. Default `pretrained_models`
+<br>
+`--model_name`: The name of the trained model that will be used. Default `bert_baseline_default`.
+<br>
+`--explain_model_name`: The name of the explanation model that should be used. This is a pretrianed model publicly available. Default `google/flan-t5-base`.
+<br>
+`--device`: The device to run the experiment on. Default: CUDA if available, CPU if not.
+<br>
+`--email_json_path`: The path to a json file containing emails to be classified. Default `test_emails.json` has been provided for reference.

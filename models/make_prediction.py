@@ -3,7 +3,7 @@ from xml.parsers.expat import model
 
 from envs.en605645.Lib import email
 import torch
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer, AutoModelForSequenceClassification
 import argparse
 from pathlib import Path
 import pandas as pd
@@ -21,16 +21,20 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--pretrained_models_dir", type=str, default=DEFAULT_MODELS_DIR)
     parser.add_argument("--model_name", type=str, default="bert_baseline_default")
+    parser.add_argument("--explain_model_name", type=str, default="google/flan-t5-base")
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--email_json_path", type=str)  # Path to the JSON file containing the email(s) to be predicted on
+    parser.add_argument("--email_json_path", type=str, default=PROJECT_ROOT / "test_emails.json")  # Path to the JSON file containing the email(s) to be predicted on
     args = parser.parse_args()
 
     # Load in the saved model and tokenizer
     trained_model = AutoModelForSequenceClassification.from_pretrained(args.pretrained_models_dir / args.model_name)
     tokenizer = AutoTokenizer.from_pretrained(args.pretrained_models_dir / args.model_name)
 
-    exp_tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-base")
-    exp_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
+    exp_tokenizer = AutoTokenizer.from_pretrained(args.explain_model_name, trust_remote_code=True)
+    if args.explain_model_name in ["google/flan-t5-base", "google/flan-t5-small"]:
+        exp_model = AutoModelForSeq2SeqLM.from_pretrained(args.explain_model_name)
+    else:
+        exp_model = AutoModelForCausalLM.from_pretrained(args.explain_model_name, trust_remote_code=True)
 
     print("Moving model to device ..." + str(args.device))
     trained_model.to(args.device)
