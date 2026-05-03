@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--pretrained_models_dir", type=str, default=DEFAULT_MODELS_DIR)
-    parser.add_argument("--model_name", type=str)
+    parser.add_argument("--model_name", type=str, default="bert_baseline_default")
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--email_json_path", type=str)  # Path to the JSON file containing the email(s) to be predicted on
     args = parser.parse_args()

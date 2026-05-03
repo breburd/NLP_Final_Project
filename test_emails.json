@@ -1,6 +1,63 @@
 [
-    {"from": "user@example.com", "to": "recipient@example.com", "subject": "Test Email", "body": "This is a simple test email."},
-    {"from": "user@example.com", "to": "recipient@example.com", "subject": "Legal Advice Requested", "body": "I am writing to seek your legal advice regarding the upcoming renewal of the Acme contract. Specifically, I would like to understand our options for termination based on the recent breach of performance clause, as I discussed with you over the phone. Please review the attached contract and provide your legal opinion on the potential liabilities."},
-    {"from": "user@example.com", "to": "recipient@example.com", "subject": "PRIVELEGED AND CONFIDENTIAL", "body": "This is a simple test email."},
-    {"from": "user@example.com", "to": "recipient@example.com", "subject": "Legal Terms", "body": "I am reaching out for a legal definition of \"privileged\"."}
+{
+"from": "[john.doe@company.com](mailto:john.doe@company.com)",
+"to": "[jane.smith@company.com](mailto:jane.smith@company.com)",
+"subject": "Q3 Budget Review",
+"body": "Hi Jane, please review the attached budget for Q3. Let me know if you have any concerns before Friday."
+},
+{
+"from": "[legal@company.com](mailto:legal@company.com)",
+"to": "[ceo@company.com](mailto:ceo@company.com)",
+"subject": "Attorney-Client Privileged: Contract Review",
+"body": "This communication is confidential and intended for legal advice. Please review the contract terms regarding liability and indemnification."
+},
+{
+"from": "[hr@company.com](mailto:hr@company.com)",
+"to": "[employee@company.com](mailto:employee@company.com)",
+"subject": "Policy Update",
+"body": "We have updated our workplace conduct policy. Please review the changes and acknowledge receipt."
+},
+{
+"from": "[lawyer@lawfirm.com](mailto:lawyer@lawfirm.com)",
+"to": "[client@company.com](mailto:client@company.com)",
+"subject": "Privileged and Confidential: Litigation Strategy",
+"body": "As discussed, our legal strategy will focus on minimizing exposure. This email contains attorney-client privileged information."
+},
+{
+"from": "[manager@company.com](mailto:manager@company.com)",
+"to": "[team@company.com](mailto:team@company.com)",
+"subject": "Team Meeting Notes",
+"body": "Thanks everyone for attending today's meeting. Here are the key takeaways and action items."
+},
+{
+"from": "[general.counsel@company.com](mailto:general.counsel@company.com)",
+"to": "[board@company.com](mailto:board@company.com)",
+"subject": "Legal Advice Regarding Compliance",
+"body": "This email provides legal advice regarding regulatory compliance obligations and should be treated as privileged."
+},
+{
+"from": "[sales@company.com](mailto:sales@company.com)",
+"to": "[client@external.com](mailto:client@external.com)",
+"subject": "Product Demo Follow-up",
+"body": "Thank you for attending the product demo. Let us know if you would like a customized quote."
+},
+{
+"from": "[attorney@lawfirm.com](mailto:attorney@lawfirm.com)",
+"to": "[executive@company.com](mailto:executive@company.com)",
+"subject": "Confidential: Internal Investigation",
+"body": "This message contains attorney-client privileged communication regarding the internal investigation findings."
+},
+{
+"from": "[it@company.com](mailto:it@company.com)",
+"to": "[all@company.com](mailto:all@company.com)",
+"subject": "System Maintenance Notice",
+"body": "The system will be down for maintenance this weekend. Please save your work accordingly."
+},
+{
+"id": 10,
+"from": "[outside.counsel@lawfirm.com](mailto:outside.counsel@lawfirm.com)",
+"to": "[legal@company.com](mailto:legal@company.com)",
+"subject": "Privileged: Risk Assessment",
+"body": "Attached is the legal risk assessment document. This communication is protected under attorney-client privilege."
+}
 ]
