@@ -135,3 +135,13 @@ The following model names can be used:
 - bert_baseline_train10k
 - bert_baseline_train45k
 - roberta_baseline
+- exp01_bert_reference
+- exp02_bert_maxlen128
+- exp03_bert_maxlen512
+- exp04_bert_train15k
+- exp05_bert_train45k
+- exp06_bert_lr1e-5
+- exp07_bert_lr3e-5
+- exp08_bert_batch16
+- exp09_bert_2epochs
+- exp10_roberta_base
